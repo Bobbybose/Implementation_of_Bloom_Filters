@@ -20,7 +20,7 @@ def main():
     # Generating set A elements to encode
     set_A_elements = [0] * num_elements_to_encode
     for index in range(num_elements_to_encode):
-        set_A_elements[index] = random.randrange(10000000)
+        set_A_elements[index] = random.randrange(1000000000)
 
     # Uncomment next line to check for duplicate element ids
     #check_id_dups(set_A_elements)
@@ -28,7 +28,7 @@ def main():
     # Creating hashes
     hashes = []
     for hash in range(num_hashes):
-        hashes.append(random.randrange(10000000))
+        hashes.append(random.randrange(1000000000))
 
     # Encoding set A elements into bloom filter
     encode_elements(set_A_elements, hashes, bloom_filter)
@@ -40,7 +40,7 @@ def main():
     # Generating set B elements
     set_B_elements = [0] * num_elements_to_encode
     for index in range(num_elements_to_encode):
-        set_B_elements[index] = random.randrange(10000000)
+        set_B_elements[index] = random.randrange(1000000000)
 
     # Uncomment next line to check for duplicate element ids
     #check_id_dups(set_B_elements)

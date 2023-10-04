@@ -1,5 +1,6 @@
 import sys
 import random
+import math
 
 def main():
 
@@ -27,33 +28,49 @@ def main():
     for set_num in range(num_sets):
         set = [0] * num_elements_per_set
         for element in range(num_elements_per_set):
-            set[element] = random.randrange(10000000)
+            set[element] = random.randrange(1000000000)
         sets.append(set)
 
-    # Codes for the sets (Assuming 7 sets for demo)
-    set_codes = ['001', '010', '011', '100', '101', '110', '111']
+    # Uncomment next four lines to check for duplicate element ids between all sets
+    mega_set = []
+    for set in sets:
+        mega_set += set
+    check_id_dups(mega_set)
 
-    # Uncomment next two line to check for duplicate element ids
-    #for set in sets:
-    #    check_id_dups(set)
+    # Codes for the sets
+    set_codes = get_set_codes(num_sets)
 
     # Creating hashes
     hashes = []
     for hash in range(num_hashes):
-        hashes.append(random.randrange(10000000))
+        hashes.append(random.randrange(1000000000))
 
-    # Encoding sets in the filters
+    # Encoding elements in all sets
+    encode_elements(sets, set_codes, hashes, bloom_filters)
+
+    # Looking up all elements
+    elements_correctly_found = 0
     # For each set
     for set_num in range(num_sets):
         # Obtaining current sets' code
         set_code = set_codes[set_num]
-        
-        # Checking each bit in the set code
-        for code_index in range(len(set_code)):
-            # Encoding in the bit's associated filter if the bit's value is 1
-            if int(set_code[code_index]) == 1:
-                encode_elements(sets[set_num], hashes, bloom_filters[code_index])
 
+        # Checking each element
+        for element in sets[set_num]:
+            # Reconstructed code for element
+            calculated_code = ''
+            # Checking if element is present in each bloom filter
+            for bloom_filter in bloom_filters:
+                # If element is present, record a 1 in the reconstructed code
+                if lookup_element(element, hashes, bloom_filter):
+                    calculated_code += '1'
+                # If element is not present, record a 0 in the reconstructed code
+                else:
+                    calculated_code += '0'
+            if calculated_code == set_code:
+                elements_correctly_found += 1
+
+    print("There are " + str(elements_correctly_found) + " elements whose lookup results are correct.")
 # main()
 
 
@@ -100,41 +117,73 @@ def check_id_dups(elements):
 # check_id_dups()
 
 
-# Inputs: Elements to encode, hashes to use for multi-hashing, bloom filter to encode in
+# Inputs: Elements to encode, hashes to use for multi-hashing, bloom filters to encode in
 # Returns: None
-# Description: Encodes all elements into the bloom filter using a given number of hashes per element
-def encode_elements(elements, hashes, bloom_filter):
-    for element in elements:
-        # Obtaining bits that element hashes to
-        element_hash_bits = hash_function(element, len(bloom_filter), hashes)
+# Description: Encodes all elements into the bloom filters using a given number of hashes per element and the mapping algorithm
+def encode_elements(sets, set_codes, hashes, bloom_filters):
+    # For each set
+    for set_num in range(len(sets)):
+        # Obtaining set code
+        set_code = set_codes[set_num]
 
-        # Encoding element at each hashed bit
-        for bit in element_hash_bits:
-            bloom_filter[bit] = 1
+        # For each element in the set
+        for element in sets[set_num]:
+            # Obtaining bit positions element hashes to
+            element_hash_bits = hash_function(element, len(bloom_filters[0]), hashes)
+            # Checking which filters to encode into
+            for code_index in range(len(set_code)):
+                # If the current bit is 1, encode into the associated filter
+                if set_code[code_index] == '1':
+                    # Encoding at each hashed position
+                    for bit in element_hash_bits:
+                        bloom_filters[code_index][bit] = 1
 # encode_elements()
 
 
-# Given: Set of elements, hashes for multi-hashing, bloom filter to lookup in
-# Returns: The number of elements in the set that are in the bloom filter
-# Description: Return the number of elements in a set that are found in a given bloom filter
-def lookup_elements(elements, hashes, bloom_filter):
-    # Recording the number of elements present from the set
-    num_elements_in_filter = 0
-    for element in elements:
-        # Obtaining bits that element hashes to
-        element_hash_bits = hash_function(element, len(bloom_filter), hashes)
-
-        # Checking if all bits that element hashes into are 1
-        in_filter = True
-        for bit in element_hash_bits:
-            if bloom_filter[bit] != 1:
-                in_filter = False
-        
-        # If element is present, increment counter
-        if in_filter:
-            num_elements_in_filter += 1
-
-    return num_elements_in_filter
+# Given: Element to lookup, hashes for multi-hashing, bloom filter to lookup in
+# Returns: Boolean representing whether element is in filter or not
+# Description: Return whether the element is in the given bloom filter
+def lookup_element(element, hashes, bloom_filter):
+    # Obtaining bits that element hashes to
+    element_hash_bits = hash_function(element, len(bloom_filter), hashes)
+    # Checking if all bits that element hashes into are 1
+    for bit in element_hash_bits:
+        if bloom_filter[bit] != 1:
+            return False
+    
+    return True
 # lookup_elements()
+
+
+# Given: Number of sets
+# Returns: Set codes for the number of sets given
+# Description: Creates the set codes for the sets of elements, based off of the number of sets
+def get_set_codes(num_sets):
+    # Calculating the number of bits for the code
+    num_bits = math.ceil(math.log(num_sets+1, 2))
+    set_codes = []
+    
+    # Creating code for each set
+    for set_num in range(1, num_sets+1):
+        set_code = ''
+
+        # Tracking current set number in order to modify as we build the bit string
+        curr_count = set_num
+
+        # Going through each bit in the code
+        for bit_pos in range(num_bits):
+            # If the set number is bigger than 2^(bit position), then the bit should be marked as 1
+            if (curr_count != 0) and (curr_count >= (2**(num_bits-bit_pos-1))):
+                set_code += '1'
+                # Subtracting out the part of the set number that the current bit represents
+                curr_count -= 2**(num_bits-bit_pos-1)
+            else:
+                set_code += '0'
+
+        set_codes.append(set_code)  
+            
+    return set_codes        
+# get_set_codes()
+
 
 main()
