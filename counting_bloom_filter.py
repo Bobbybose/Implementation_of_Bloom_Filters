@@ -6,7 +6,7 @@ def main():
     # Checking that the correct number of arguments was passed in
     if len(sys.argv) != 6:
         print("Invalid number of arguments")
-        print("Program should be run in form 'python ./bloom_filter.py num_elements_to_encode num_elements_to_remove num_elements_to_add num_counters_in_filter num_hashes'")
+        print("Program should be run in form 'python ./counting_bloom_filter.py num_elements_to_encode num_elements_to_remove num_elements_to_add num_counters_in_filter num_hashes'")
         return
     
     # Setting input parameters
