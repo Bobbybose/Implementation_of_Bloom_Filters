@@ -54,7 +54,7 @@
     - Encodes a given number of sets of elements to a given number of standard bloom filters
         - The number of elements in each set is given
         - The number of bits in each filter is given
-    - Each set has a unique set code of length $\lceil log~2(num\_sets+1)\rceil$ bits
+    - Each set has a unique set code of length $\lceil log~2(num-sets+1)\rceil$ bits
         - For demo example of 7 sets, the code is 3 bits long
         - Each bit of the set code represents a different bloom filter
         - If the bit is 1, then all elements from the set should be encoded in the corresponding bloom filter
